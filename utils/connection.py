@@ -2,20 +2,31 @@ from utils.base import base
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import snowflake.connector
-
+from utils.utils_snowflake import SnowflakeCredentials
+from sqlalchemy.engine import Engine
 
 class connection(base):
     
+
     def __init__(self) -> None:
         super().__init__()
 
-    def create_sqlalchemy_engine(self):
+    def create_sqlalchemy_engine(self, database = 'sql_server') -> Engine:
         '''
         return an sqlalchemy enginer for loading pandas dataframe to sql server
         '''
+        if database == 'sql_server':
+            conn_string = self.config['SQLSERVER_CONN']
+        if database == 'snowflake':
+            conn_string = self.config['SNOWFLAKE_CONN']
+        if database == 'snowflake':
+            conn_string = self.config['REDSHIFT_CONN']
+        else:
+            raise Exception(f"Invalid database: {database}")
+
         try:
             # self.conn_string = f"DRIVER={self.config['SQL_DRIVER']};SERVER={self.config['SQL_SERVER']};DATABASE={self.config['SQL_SERVER_DATABASE']};Trusted_Connection=yes"
-            engine = create_engine(self.config['SQLSERVER_CONN'], fast_executemany=True, future=True, isolation_level="AUTOCOMMIT")
+            engine = create_engine(conn_string, fast_executemany=True, future=True, isolation_level="AUTOCOMMIT")
             if self.logger:
                 self.logger.info("Successfully create sqlalchemy engine")
             return engine

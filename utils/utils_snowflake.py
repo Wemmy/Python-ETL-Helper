@@ -1,5 +1,9 @@
 
 from utils.connection import connection
+import os
+from dataclasses import dataclass
+from utils.dataclasses import iterate_as_dict
+from utils.utils_aws import AWSUtils
 
 
 class snowflake(connection):
@@ -54,6 +58,76 @@ class snowflake(connection):
         return results[0][0] 
 
 
+
+@iterate_as_dict
+@dataclass(frozen=True)
+class SnowflakeCredentials:
+    username: str
+    password: str
+    account: str
+    port: int
+    database: str
+    warehouse: str
+    role: str
+    driver: str = "snowflake"
+
+    @property
+    def url(self):
+        """Constructs the database url for the credentials instance."""
+        return f"{self.driver}://{self.username}:{self.password}@{self.account}/{self.database}?warehouse={self.warehouse}&role={self.role}"
+
+    @staticmethod
+    def from_env_vars(prefix: str) -> "SnowflakeCredentials":
+        """Constructs a SnowflakeCredentials instance from env vars.
+        
+        To use credentials from your environment variables, ensure your credentials all have
+        the same prefix, and pass that prefix along through the "prefix" arg.
+
+        For example, you can pass prefix="MY_PREFIX" and the following env vars will be used:
+            - MY_PREFIX_USER
+            - MY_PREFIX_ENV_SECRET_PASSWORD
+            - MY_PREFIX_ACCOUNT
+            - MY_PREFIX_PORT
+            - MY_PREFIX_DB_NAME
+            - MY_PREFIX_WAREHOUSE
+            - MY_PREFIX_ROLE
+        """
+
+        return SnowflakeCredentials(
+            username=os.environ[f"{prefix}_USER"],
+            password=os.environ[f"{prefix}_ENV_SECRET_PASSWORD"],
+            account=os.environ[f"{prefix}_ACCOUNT"],
+            port=os.environ[f"{prefix}_PORT"],
+            database=os.environ[f"{prefix}_DB_NAME"],
+            warehouse=os.environ[f"{prefix}_WAREHOUSE"],
+            role=os.environ[f"{prefix}_ROLE"],
+        )
+
+    @staticmethod
+    def from_aws_secrets(secret_name: str, region_name: str):
+        """Constructs a SnowflakeCredentials instance from the supplied aws secret.
+        
+        To use credentials from an aws secret, the secret must have the following keys:
+            - username
+            - password
+            - account
+            - port
+            - db_name
+            - warehouse
+            - role
+        """
+
+        secrets = AWSUtils.get_secret(secret_name, region_name)
+
+        return SnowflakeCredentials(
+            username=secrets["username"],
+            password=secrets["password"],
+            account=secrets["account"],
+            port=secrets["port"],
+            database=secrets["db_name"],
+            warehouse=secrets["warehouse"],
+            role=secrets["role"],
+        )
     
 def test():
     sf = snowflake()
