@@ -4,10 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 from utils.utils_redshift import RedshiftCredentials
-from utils.utils_redshift import RedshiftCredentials
-from business_intelligence.libs.csv.database_utils import dump_csv_to_database
-from business_intelligence.libs.csv.database_utils import IfExists
-from business_intelligence.libs.csv.database_utils import IF_EXISTS_REPLACE
+from utils.utils_snowflake import SnowflakeCredentials
+from utils.utils_csv import dump_csv_to_database
+from utils.utils_csv import IfExists
+from utils.utils_csv import IF_EXISTS_REPLACE
 
 
 
