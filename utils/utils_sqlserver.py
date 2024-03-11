@@ -2,13 +2,28 @@ from utils import *
 from utils.connection import connection
 import os
 from datetime import datetime
+import pandas as pd
+# from sqlalchemy import create_engine
+# from sqlalchemy.exc import SQLAlchemyError
+# from sqlalchemy.engine import Engine
 
 class sqlserver(connection):
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.engine = self.create_sqlalchemy_engine()
+    def __init__(self, logger_name=None) -> None:
+        super().__init__(logger_name=logger_name, conn_name = 'SQL_SERVER')
+        self.engine = self.create_sqlalchemy_engine(self.config['SQLSERVER_CONN'])
         self.conn = self.create_connection_sqlserver()
+        
+
+    def get_dataframe(self, table_name, schema = None):
+        if not schema:
+            schema = self.config['SQL_SERVER_SCHEMA']
+
+        q = f"""
+            select * from {schema}.{table_name}
+        """
+        rows, columns = self.execute_a_query(q)
+        return pd.DataFrame(rows, columns=columns)
 
     def if_table_exists(self, table_name, schema = None):
         """

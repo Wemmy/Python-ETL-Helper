@@ -8,8 +8,8 @@ from utils.utils_aws import AWSUtils
 
 class snowflake(connection):
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, logger_name=None) -> None:
+        super().__init__(logger_name=logger_name, conn_name = 'SNOWFLAKE')
         self.conn = self.create_connection_snowflake()
     
     def get_max_min_value_of_cloumn(self, table_name, column_name):

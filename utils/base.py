@@ -5,18 +5,22 @@ import requests
 from requests.auth import HTTPBasicAuth
 import pandas as pd
 from io import BytesIO
+from loguru import logger
+import sys
 
 class base():
 
-    def __init__(self) -> None:
+    def __init__(self, logger_name=None, to_file=False) -> None:
 
         # get all config
         self.config = dotenv_values()
 
         # overwrite by children
-        self.logger = None
+        self.logger = LoggerManager.get_logger(logger_name, to_file=to_file, level="TRACE", mode='w') if logger_name else None
 
         self.conn = None
+
+        self.conn_name = None
 
     def create_pyodbc_connection(self, connection_string):
         '''
@@ -25,20 +29,20 @@ class base():
         try:
             connection = pyodbc.connect(connection_string)
             if self.logger:
-                self.logger.info("Successfully connected to the SQL Server using Windows Authentication.")
+                self.logger.info(f"Successfully connected to the {self.conn_name} through pyodbc.")
             return connection
         except pyodbc.Error as e:
             if self.logger:
-                self.logger.error("Failed to connect to SQL Server: %s", e)
+                self.logger.error(f"Failed to connect to {self.conn_name}: {e}")
             raise
         
-    def execute_a_query(self, query):
+    def execute_a_query(self, query, param = None):
         '''
         execute a query throught odbc connection
         '''
         with self.conn.cursor() as cursor:
             try:
-                cursor.execute(query)
+                cursor.execute(query, param)
                 if cursor.description:
                     rows = cursor.fetchall()
                     columns = [desc[0] for desc in cursor.description]
@@ -83,3 +87,18 @@ class base():
             query = file.read()
         return query
 
+
+class LoggerManager:
+    _loggers = {}
+
+    @classmethod
+    def get_logger(cls, name="test", to_file=False, level="TRACE", mode='w'):
+        if name not in cls._loggers:
+            # Configure your logger
+            log_config = {"handlers": [{"sink": sys.stdout, "format": "{time} {level} {message}", "level": level}]}
+            if to_file:
+                log_config["handlers"].append({"sink": f"{name}", "format": "{time} {level} {message}", "level": level, "mode": mode})
+            
+            logger.configure(**log_config)
+            cls._loggers[name] = logger
+        return cls._loggers[name]
